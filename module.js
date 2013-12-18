@@ -15,10 +15,10 @@ angular.module('hsa_window', [])
 			mess = JSON.parse(e.data);
 		}catch (e) {return;}
 
-		var cb = function () {
+		var cb = (mess.cb) ? function () {
 			source.postMessage(JSON.stringify({'__type':'system', 'command': 'answer', data:arguments, cb: mess.cb}), source.location.origin);
 			console.log('==>', mess.cb, arguments);
-		}
+		} : undefined;
 
 		if (mess['__type'] == 'system') {
 			switch (mess.command) {
@@ -44,8 +44,10 @@ angular.module('hsa_window', [])
 		}
 		if (mess['__type'] == 'message') {
 			var d = mess.data;
+			var args = [d];
+			cb && args.push(cb);
 			for (var i in monitors) {
-				('function' === typeof(monitors[i]))  && monitors[i](mess.data, cb);
+				('function' === typeof(monitors[i]))  && monitors[i].apply(null, args);
 			}
 			return;
 		}
@@ -62,16 +64,13 @@ angular.module('hsa_window', [])
 	}
 	///moze ovo bolje, ali neka ga za sad ...
 	var monitors = [];
-	ret.monitor = function (scope) {
-		return monitors.push (scope)-1;
-	}
 	ret.unmonitor = function (index) {
-		ret.monitor[index] = undefined;
+		ret.monitors[index] = undefined;
 	}
 
-	ret.monitor(function (data, cb) {
-		console.log('samo da te probam', data);
-	});
+	ret.monitor = function (cb) {
+		return monitors.push(cb) - 1;
+	};
 
 	ret.isReady = function (alias) {
 		return (windows[alias] && !windows[alias].closed);
@@ -111,6 +110,7 @@ angular.module('hsa_window', [])
 	function send (alias, messobj, cb) {
 		///make some space for callbacks ... TODO
 		var to_send = messobj;
+		if (!windows[alias]) return;
 
 		if ('function' === typeof(cb)) {
 			cnt++;
