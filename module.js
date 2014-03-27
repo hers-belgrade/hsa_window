@@ -7,13 +7,15 @@ angular.module('hsa_window', [])
 	var queue = {};
 	var started = false;
 	var identity = null;
+
 	function listener (e) {
-		if (!e.data) return;
+		if (e.source === $window || !e.data) return;
 		var source = e.source;
 		var mess;
 		try {
 			mess = JSON.parse(e.data);
 		}catch (e) {return;}
+    console.log('MESSAGE IS ',mess, e.source);
 
 		var cb = (mess.cb) ? function () {
 			source.postMessage(JSON.stringify({'__type':'system', 'command': 'answer', data:arguments, cb: mess.cb}), source.location.origin);
@@ -57,7 +59,7 @@ angular.module('hsa_window', [])
 		if (started) return;
 		started = true;
 		if ($window.addEventListener) {
-			$window.addEventListener('message', listener, false);
+			$window.addEventListener('message', listener, true);
 		}else{
 			$window.attachEvent('onmessage', listener);
 		}
@@ -110,7 +112,8 @@ angular.module('hsa_window', [])
 	function send (alias, messobj, cb) {
 		///make some space for callbacks ... TODO
 		var to_send = messobj;
-		if (!windows[alias]) return;
+    var target = (alias === 'parent') ? {'window':$window.opener, pending:false} : windows[alias];
+    if (!target) return;
 
 		if ('function' === typeof(cb)) {
 			cnt++;
@@ -118,10 +121,10 @@ angular.module('hsa_window', [])
 			cbs[cnt] = cb;
 			to_send.cb = cnt;
 		}
-		if (windows[alias].pending) {
-			windows[alias].queue.push (to_send);
+		if (target.pending && target !== parent) {
+			target.queue.push (to_send);
 		}else{
-			windows[alias].window.postMessage(JSON.stringify(to_send), $window.location.origin);
+			target.window.postMessage(JSON.stringify(to_send), $window.location.origin);
 		}
 	}
 
