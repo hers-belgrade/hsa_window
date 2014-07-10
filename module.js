@@ -15,11 +15,11 @@ angular.module('hsa_window', [])
 		try {
 			mess = JSON.parse(e.data);
 		}catch (e) {return;}
-    console.log('MESSAGE IS ',mess, e.source);
+    //console.log('MESSAGE IS ',mess, e.source);
 
 		var cb = (mess.cb) ? function () {
 			source.postMessage(JSON.stringify({'__type':'system', 'command': 'answer', data:arguments, cb: mess.cb}), source.location.origin);
-			console.log('==>', mess.cb, arguments);
+			//console.log('==>', mess.cb, arguments);
 		} : undefined;
 
 		if (mess['__type'] == 'system') {
@@ -89,7 +89,7 @@ angular.module('hsa_window', [])
 			var item = windows[alias].queue.shift();
 			send(alias, item);
 		}
-		console.log('done with queue release');
+		//console.log('done with queue release');
 	}
 
 	ret.create = function (alias, url, specs, replace) {
@@ -148,5 +148,5 @@ angular.module('hsa_window', [])
 })
 .run(function (hsaw) {
 	hsaw.start();
-	console.log('started');
+	//console.log('started');
 });
